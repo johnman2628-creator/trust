@@ -45,6 +45,10 @@ npm run dev:client
 
 Open [http://localhost:8787](http://localhost:8787) when using Wrangler alone, or [http://localhost:5173](http://localhost:5173) with the Vite dev server.
 
+### Individual play (solo)
+
+From the home screen, choose **Individual play** for a **10-round** iterated Prisoner's Dilemma vs a bot (default **Copycat / Tit for Tat**; switch opponent strategy before the match). Runs entirely in the browser using `@trust/shared` payoffs and strategies — no Worker required.
+
 ## Deploy to Cloudflare Workers (free tier)
 
 1. Log in once on your machine: `npx wrangler login`
