@@ -2,10 +2,14 @@ import { useCallback, useState } from "react";
 import type { RoomSnapshot, StrategyId } from "@trust/shared";
 import { STRATEGY_IDS, STRATEGY_LABELS } from "@trust/shared";
 import { PeepRing } from "./PeepRing";
+import { SoloPlay } from "./SoloPlay";
 import { useTrustSocket } from "./useTrustSocket";
 
+type AppMode = "home" | "solo";
+
 export function App() {
-  const { connected, playerId, snapshot, error, send, host, join } = useTrustSocket();
+  const { playerId, snapshot, error, send, host, join } = useTrustSocket();
+  const [mode, setMode] = useState<AppMode>("home");
   const [name, setName] = useState("Explorer");
   const [pinInput, setPinInput] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
@@ -22,12 +26,22 @@ export function App() {
     [send]
   );
 
+  if (mode === "solo" && !inRoom) {
+    return <SoloPlay onBack={() => setMode("home")} />;
+  }
+
   if (!inRoom) {
     return (
       <div className="lobby-center">
         <div className="panel">
           <h1>Evolution of Trust</h1>
-          <p>Multiplayer sandbox — host or join with a 6-digit PIN.</p>
+          <p>Play solo or share a multiplayer sandbox with a 6-digit PIN.</p>
+          <button type="button" style={{ width: "100%", marginBottom: "1rem" }} onClick={() => setMode("solo")}>
+            Individual play
+          </button>
+          <p className="status-line" style={{ marginBottom: "1rem" }}>
+            Multiplayer sandbox
+          </p>
           <div className="field">
             <label htmlFor="name">Your name</label>
             <input
