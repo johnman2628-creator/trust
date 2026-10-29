@@ -12,7 +12,7 @@ export function App() {
 
   const inRoom = Boolean(snapshot);
 
-  const onHost = () => host(name);
+  const onHost = () => void host(name);
   const onJoin = () => join(pinInput, name);
 
   const updateConfig = useCallback(
@@ -38,7 +38,7 @@ export function App() {
             />
           </div>
           <div className="row" style={{ justifyContent: "center", marginTop: "1rem" }}>
-            <button type="button" onClick={onHost} disabled={!connected}>
+            <button type="button" onClick={() => void onHost()}>
               Host room
             </button>
           </div>
@@ -52,10 +52,9 @@ export function App() {
               placeholder="123456"
             />
           </div>
-          <button type="button" className="secondary" onClick={onJoin} disabled={!connected || pinInput.length < 6}>
+          <button type="button" className="secondary" onClick={onJoin} disabled={pinInput.length < 6}>
             Join room
           </button>
-          {!connected && <p className="status-line">Connecting…</p>}
           {error && <p className="status-line">{error}</p>}
           <p className="credit">
             Based on{" "}

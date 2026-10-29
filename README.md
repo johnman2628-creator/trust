@@ -8,50 +8,92 @@ A shared WebSocket sandbox for [Nicky Case’s *The Evolution of Trust*](https:/
 
 | Package | Role |
 |---------|------|
-| `shared/` | TypeScript PD strategies (`tft`, `all_d`, `all_c`, `grudge`, `prober`, `tf2t`, `pavlov`, `random`), round-robin tournament, eliminate-worst / reproduce-best evolution, deterministic RNG from room seed |
-| `server/` | Node WebSocket room server (6-digit PIN, shared controls, authoritative simulation, snapshot broadcast). In production serves `client/dist` on `process.env.PORT` |
-| `client/` | Vite + React lobby, player list, sandbox controls, canvas ring of peeps |
+| `shared/` | TypeScript PD strategies, tournament + evolution, deterministic RNG (used by the Worker DO) |
+| `worker/` | **Production:** Cloudflare Worker (static assets + `/api/host`) and **GameRoom** Durable Object (WebSocket hibernation, authoritative sim) |
+| `client/` | Vite + React UI; connects to same-origin `wss://…/ws/:pin` |
+| `server/` | Optional legacy Node + Express server for local comparison (`npm run build:legacy` / `npm start`) |
 
-## Local development
+## Requirements
 
-Requirements: **Node 20** (see `.node-version`).
+- **Node 20** (see `.node-version`)
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) (installed via `npm install` in this repo)
+- Cloudflare account for deploy (you run deploy locally — no tokens in chat)
+
+## Build
 
 ```bash
 npm install
 npm run build
+```
+
+Builds `shared`, the Vite client (`client/dist`), and validates the Worker bundle with `wrangler deploy --dry-run`.
+
+## Local development (Cloudflare)
+
+Terminal 1 — Worker + static assets + Durable Objects (default port **8787**):
+
+```bash
+npm run dev
+# or: npm run dev -w worker
+```
+
+Terminal 2 — optional Vite hot reload for UI (proxies `/ws`, `/api`, `/health` to 8787):
+
+```bash
+npm run dev:client
+```
+
+Open [http://localhost:8787](http://localhost:8787) when using Wrangler alone, or [http://localhost:5173](http://localhost:5173) with the Vite dev server.
+
+## Deploy to Cloudflare Workers (free tier)
+
+1. Log in once on your machine: `npx wrangler login`
+2. From the repo root:
+
+```bash
+npm run deploy
+```
+
+Or:
+
+```bash
+npm run build
+npx wrangler deploy --config worker/wrangler.jsonc
+```
+
+3. Share the `*.workers.dev` URL (or attach a custom domain in the Cloudflare dashboard).
+
+### Architecture
+
+- **Workers Static Assets** serve `client/dist` (SPA fallback).
+- **`POST /api/host`** allocates a 6-digit PIN and creates a **GameRoom** Durable Object via `idFromName(pin)`.
+- **WebSocket** clients connect to **`/ws/:pin`** on the same origin; the DO uses the [WebSocket Hibernation API](https://developers.cloudflare.com/durable-objects/best-practices/websockets/) (`acceptWebSocket`, `webSocketMessage`, `webSocketClose`).
+- Room state and simulation use the same rules as `shared/` (population 25, noise, eliminate / reproduce).
+
+`worker/wrangler.jsonc` includes a Durable Object binding and a `new_sqlite_classes` migration for `GameRoom`.
+
+## Legacy Node server (optional)
+
+```bash
+npm run build:legacy
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). One player **Host room**, others **Join** with the PIN.
+Serves on `http://localhost:3000` with a single-process WebSocket server (no Cloudflare).
 
-For hot reload during development (optional):
+## Render (optional)
 
-```bash
-npm install
-npm run dev -w server   # terminal 1 — API + WS on :3000
-npm run dev -w client   # terminal 2 — Vite on :5173 (proxies /ws)
-```
-
-## Deploy on Render
-
-This repo includes a [Render Blueprint](https://render.com/docs/blueprint-spec) (`render.yaml`) for a **free Node web service** in **Singapore**:
-
-- **Build:** `npm install && npm run build`
-- **Start:** `npm start`
-- Binds to `0.0.0.0` and `PORT` automatically.
-
-1. Push this repository to GitHub.
-2. In the [Render Dashboard](https://dashboard.render.com/), create a **Blueprint** from the repo (or add a **Web Service** manually with the same build/start commands).
-3. After deploy, share the `onrender.com` URL; players connect in the browser — WebSocket path is `/ws`.
-
-Do not commit secrets; no database is required (ephemeral in-memory rooms).
+`render.yaml` remains for the legacy Node stack if you prefer Render; **production for this repo is Cloudflare Workers**.
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run build` | Builds `shared`, then `client`, then `server` |
-| `npm start` | Production server (`@trust/server`) |
+| `npm run build` | Build shared + client + Worker dry-run bundle |
+| `npm run dev` | `wrangler dev` (Worker + DO + assets) |
+| `npm run deploy` | Build and `wrangler deploy` |
+| `npm run build:legacy` | Build shared + client + Node server |
+| `npm start` | Legacy Node production server |
 
 ## License
 
