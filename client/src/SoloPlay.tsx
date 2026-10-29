@@ -11,6 +11,9 @@ import {
   type StrategyId,
   type StrategyLogic,
 } from "@trust/shared";
+import { AnimatedScore } from "./AnimatedScore";
+import { PdMoveButtons } from "./PdMoveButtons";
+import { PdRoundRevealPanel } from "./PdRoundRevealPanel";
 
 type Phase = "playing" | "reveal" | "finished";
 
@@ -27,6 +30,7 @@ export function SoloPlay({ onBack }: Props) {
   const [phase, setPhase] = useState<Phase>("playing");
   const [history, setHistory] = useState<SoloRoundRecord[]>([]);
   const [lastReveal, setLastReveal] = useState<SoloRoundRecord | null>(null);
+  const [stageKey, setStageKey] = useState(0);
   const botRef = useRef<StrategyLogic>(createStrategyLogic("tft"));
 
   const totals = useMemo(() => {
@@ -45,6 +49,7 @@ export function SoloPlay({ onBack }: Props) {
       setPhase("playing");
       setHistory([]);
       setLastReveal(null);
+      setStageKey((k) => k + 1);
     },
     [strategyId]
   );
@@ -83,6 +88,7 @@ export function SoloPlay({ onBack }: Props) {
     setRound((r) => r + 1);
     setPhase("playing");
     setLastReveal(null);
+    setStageKey((k) => k + 1);
   };
 
   const summary =
@@ -92,6 +98,8 @@ export function SoloPlay({ onBack }: Props) {
         ? "Your opponent came out ahead — the dilemma is real."
         : "A tie — perfectly balanced cooperation and betrayal.";
 
+  const totalToken = `${totals.player}-${totals.opponent}`;
+
   return (
     <div className="solo-layout">
       <aside className="panel">
@@ -99,7 +107,7 @@ export function SoloPlay({ onBack }: Props) {
           ← Back to home
         </button>
         <h2 style={{ marginTop: "1rem" }}>Play vs bot</h2>
-        <p className="status-line">
+        <p className="status-line pd-round-badge">
           Round {Math.min(round, SOLO_ROUND_COUNT)} of {SOLO_ROUND_COUNT}
         </p>
         <div className="field">
@@ -118,14 +126,12 @@ export function SoloPlay({ onBack }: Props) {
           </select>
         </div>
         <div className="score-totals">
-          <div>
-            <span className="score-label">You</span>
-            <span className="score-value">{totals.player}</span>
-          </div>
-          <div>
-            <span className="score-label">{STRATEGY_LABELS[strategyId]}</span>
-            <span className="score-value">{totals.opponent}</span>
-          </div>
+          <AnimatedScore value={totals.player} label="You" token={totalToken} />
+          <AnimatedScore
+            value={totals.opponent}
+            label={STRATEGY_LABELS[strategyId]}
+            token={totalToken}
+          />
         </div>
         <p className="credit">
           Payoffs: both cooperate +2/+2 · both cheat 0/0 · cheat vs cooperate +3/−1
@@ -133,82 +139,43 @@ export function SoloPlay({ onBack }: Props) {
       </aside>
 
       <main className="panel solo-main">
-        {phase === "playing" && (
-          <>
-            <h2>Your move</h2>
-            <p>Choose cooperate or cheat before your opponent acts.</p>
-            <div className="row move-row">
-              <button type="button" className="coop-btn" onClick={() => playMove("C")}>
-                Cooperate
-              </button>
-              <button type="button" className="cheat-btn" onClick={() => playMove("D")}>
-                Cheat
-              </button>
+        <div className="pd-stage" key={stageKey}>
+          {phase === "playing" && (
+            <div className="pd-round-enter">
+              <h2>Round {round} — your move</h2>
+              <p>Choose cooperate or cheat before your opponent acts.</p>
+              <PdMoveButtons onCooperate={() => playMove("C")} onCheat={() => playMove("D")} />
             </div>
-          </>
-        )}
+          )}
 
-        {(phase === "reveal" || phase === "finished") && lastReveal && (
-          <div className="round-reveal">
-            <h2>Round {lastReveal.round} results</h2>
-            <div className="move-grid">
-              <div>
-                <span className="score-label">You played</span>
-                <strong className={lastReveal.playerMove === "C" ? "text-coop" : "text-cheat"}>
-                  {moveLabel(lastReveal.playerMove)}
-                </strong>
-              </div>
-              <div>
-                <span className="score-label">They played</span>
-                <strong className={lastReveal.opponentMove === "C" ? "text-coop" : "text-cheat"}>
-                  {moveLabel(lastReveal.opponentMove)}
-                </strong>
-              </div>
-              <div>
-                <span className="score-label">Points this round</span>
-                <strong>
-                  {lastReveal.playerPoints >= 0 ? "+" : ""}
-                  {lastReveal.playerPoints} / {lastReveal.opponentPoints >= 0 ? "+" : ""}
-                  {lastReveal.opponentPoints}
-                </strong>
-              </div>
-              <div>
-                <span className="score-label">Running totals</span>
-                <strong>
-                  {lastReveal.playerTotal} – {lastReveal.opponentTotal}
-                </strong>
-              </div>
-            </div>
-            {phase === "reveal" ? (
-              <button type="button" onClick={nextRound}>
-                Next round
-              </button>
-            ) : (
-              <div className="finish-block">
-                <h3>Final scores</h3>
-                <p className="final-scores">
-                  You {lastReveal.playerTotal} · Opponent {lastReveal.opponentTotal}
-                </p>
-                <p>{summary}</p>
-                <div className="row">
-                  <button type="button" onClick={() => resetGame()}>
-                    Play again
-                  </button>
-                  <button type="button" className="secondary" onClick={onBack}>
-                    Back to home
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          {(phase === "reveal" || phase === "finished") && lastReveal && (
+            <PdRoundRevealPanel
+              data={{
+                round: lastReveal.round,
+                youTitle: "You played",
+                themTitle: "They played",
+                yourMove: lastReveal.playerMove,
+                theirMove: lastReveal.opponentMove,
+                yourPoints: lastReveal.playerPoints,
+                theirPoints: lastReveal.opponentPoints,
+                yourTotal: lastReveal.playerTotal,
+                theirTotal: lastReveal.opponentTotal,
+              }}
+              finished={phase === "finished"}
+              summary={summary}
+              onNext={phase === "reveal" ? nextRound : undefined}
+              onPlayAgain={phase === "finished" ? () => resetGame() : undefined}
+              onBack={phase === "finished" ? onBack : undefined}
+            />
+          )}
+        </div>
 
         {history.length > 0 && (
           <div className="history-block">
             <h3>Round log</h3>
             <ul className="round-log">
               {history.map((r) => (
-                <li key={r.round}>
+                <li key={r.round} className="round-log-item">
                   #{r.round}: you {moveLabel(r.playerMove)}, they {moveLabel(r.opponentMove)} →{" "}
                   {r.playerPoints >= 0 ? "+" : ""}
                   {r.playerPoints} / {r.opponentPoints >= 0 ? "+" : ""}
