@@ -47,7 +47,9 @@ Open [http://localhost:8787](http://localhost:8787) when using Wrangler alone, o
 
 ### Individual play (solo)
 
-From the home screen, choose **Individual play** for a **10-round** iterated Prisoner's Dilemma vs a bot (default **Copycat / Tit for Tat**; switch opponent strategy before the match). Runs entirely in the browser using `@trust/shared` payoffs and strategies — no Worker required.
+From the home screen, choose **Play vs bot** for a **10-round** iterated Prisoner's Dilemma against a strategy bot (client-only, `@trust/shared` payoffs).
+
+**Host PD room / Join PD room** runs a separate **online 1v1** match (10 rounds, private choices, reveal) on the `PdRoom` Durable Object (`/api/pd/host`, WebSocket `/ws/pd/:pin`). This is distinct from the **sandbox tournament** (`/api/host`, `/ws/:pin`).
 
 ## Deploy to Cloudflare Workers (free tier)
 
