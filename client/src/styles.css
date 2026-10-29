@@ -165,6 +165,23 @@ canvas {
   margin: 0 auto;
 }
 
+.home-panel {
+  max-width: 480px !important;
+  text-align: left;
+}
+
+.home-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #3d3552;
+}
+
+.home-section h2 {
+  font-size: 1rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
 .agent-picker {
   margin-top: 0.75rem;
   font-size: 0.85rem;

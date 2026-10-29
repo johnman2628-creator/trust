@@ -98,7 +98,7 @@ export function SoloPlay({ onBack }: Props) {
         <button type="button" className="secondary linkish" onClick={onBack}>
           ← Back to home
         </button>
-        <h2 style={{ marginTop: "1rem" }}>Individual play</h2>
+        <h2 style={{ marginTop: "1rem" }}>Play vs bot</h2>
         <p className="status-line">
           Round {Math.min(round, SOLO_ROUND_COUNT)} of {SOLO_ROUND_COUNT}
         </p>
