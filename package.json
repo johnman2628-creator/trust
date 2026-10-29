@@ -1,0 +1,17 @@
+{
+  "name": "trust-multiplayer",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "build": "npm run build -w shared && npm run build -w client && npm run build -w server",
+    "start": "npm start -w server",
+    "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
