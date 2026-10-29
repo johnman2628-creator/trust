@@ -1,6 +1,7 @@
 {
   "name": "@trust/server",
   "version": "1.0.0",
+  "description": "Legacy Node WebSocket server (optional). Production uses @trust/worker on Cloudflare.",
   "type": "module",
   "scripts": {
     "build": "tsc",
